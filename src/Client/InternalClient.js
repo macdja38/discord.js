@@ -1852,12 +1852,12 @@ export default class InternalClient {
 		var client = this.client;
 		var data = packet.d;
 		switch (packet.t) {
-			case PacketType.RESUME:
+			case PacketType.RESUMED:
 			case PacketType.READY:
 				this.autoReconnectInterval = 1000;
 				this.state = ConnectionState.READY;
 
-				if(packet.t === PacketType.RESUME) {
+				if(packet.t === PacketType.RESUMED) {
 					break;
 				}
 
