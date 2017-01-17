@@ -332,14 +332,16 @@ export default class InternalClient {
               token = data.d.token;
               endpoint = data.d.endpoint;
               if (!token || !endpoint) return;
-              let chan = new VoiceConnection(
-                channel, this.client, session, token, server, endpoint
-              );
-              this.voiceConnections.add(chan);
+              /* let chan = new VoiceConnection(
+               channel, this.client, session, token, server, endpoint
+               )
+               this.voiceConnections.add(chan); */
 
-              chan.on("ready", () => resolve(chan));
-              chan.on("error", reject);
-              chan.on("close", reject);
+              // chan.on("ready", () => resolve(chan));
+              // chan.on("error", reject);
+              // chan.on("close", reject);
+
+              resolve({ channel, client: this.client, session, token, server, endpoint });
 
               if (timeout) {
                 clearTimeout(timeout);
