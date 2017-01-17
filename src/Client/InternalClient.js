@@ -1875,9 +1875,6 @@ export default class InternalClient {
   processPacket(packet) {
     let client = this.client;
     let data = packet.d;
-    if (packet.t !== PacketType.PRESENCE_UPDATE) {
-      console.log(packet);
-    }
     switch (packet.t) {
       case PacketType.RESUMED:
       case PacketType.READY: {
@@ -1962,16 +1959,11 @@ export default class InternalClient {
         break;
       }
       case PacketType.MESSAGE_CREATE: {
-        console.log("got message create");
         // format: https://discordapi.readthedocs.org/en/latest/reference/channels/messages.html#message-format
         let channel = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
-        console.log("typeof channel", typeof channel);
         if (channel) {
-          console.log("adding message to cache");
           let msg = channel.messages.add(new Message(data, channel, client));
-          console.log("typeof message", typeof msg);
           channel.lastMessageID = msg.id;
-          console.log("emitting message");
           if (this.messageAwaits[channel.id + msg.author.id]) {
             this.messageAwaits[channel.id + msg.author.id].map(fn => fn(msg));
             this.messageAwaits[channel.id + msg.author.id] = null;
@@ -1980,7 +1972,6 @@ export default class InternalClient {
             client.emit("message", msg);
           }
         } else {
-          console.log("message created but channel is not cached");
           client.emit("warn", "message created but channel is not cached");
         }
         break;
