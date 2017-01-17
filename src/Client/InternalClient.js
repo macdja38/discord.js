@@ -1756,6 +1756,7 @@ export default class InternalClient {
 			this.state = ConnectionState.DISCONNECTED;
 			if(event && event.code) {
                 this.client.emit("warn", "WS close: " + event.code);
+                console.error("DISCONNECTED", event);
                 var err;
                 if(event.code === 4001) {
                     err = new Error("Gateway received invalid OP code");
