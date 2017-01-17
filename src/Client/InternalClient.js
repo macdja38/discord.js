@@ -1825,6 +1825,7 @@ export default class InternalClient {
 					this.disconnected(true);
 					break;
 				case 9:
+					console.error("Recived op 9", packet);
 					this.sessionID = null;
 					this.sequence = 0;
 					this.identify();
