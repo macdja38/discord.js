@@ -51,6 +51,7 @@ function delay(ms) {
 
 export default class InternalClient {
 	constructor(discordClient) {
+	  this.setupCalled = false;
 		this.setup(discordClient);
 	}
 
@@ -134,6 +135,7 @@ export default class InternalClient {
 	}
 
 	setup(discordClient) {
+	  this.setupCalled = true;
 		discordClient = discordClient || this.client;
 		this.client = discordClient;
 		this.state = ConnectionState.IDLE;
@@ -541,7 +543,9 @@ export default class InternalClient {
 	// def loginWithToken
 	// email and password are optional
 	loginWithToken(token, email, password) {
-		this.setup();
+	  if (!this.setupCalled) {
+      this.setup();
+    }
 
 		this.state = ConnectionState.LOGGED_IN;
 		this.token = token;
