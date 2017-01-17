@@ -137,6 +137,8 @@ export default class InternalClient {
   }
 
   setup(discordClient) {
+	  this.sessionID = false;
+	  this.hasBeenReady = false;
     this.setupCalled = true;
     discordClient = discordClient || this.client;
     this.client = discordClient;
@@ -1772,7 +1774,10 @@ export default class InternalClient {
         console.error("close event", event, event.code);
         this.client.emit("warn", "WS close: " + event.code);
         let err;
-        if (event.code === 4001) {
+        if (event.code === 1006) {
+          this.setup();
+          err = new Error("Error 1006, god knows");
+        } else if (event.code === 4001) {
           err = new Error("Gateway received invalid OP code");
         } else if (event.code === 4005) {
           err = new Error("Gateway received invalid message");
