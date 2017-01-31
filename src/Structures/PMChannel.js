@@ -13,13 +13,17 @@ export default class PMChannel extends Channel {
     this.type = data.type;
     this.lastMessageID = data.last_message_id || data.lastMessageID;
     this.messages = new Cache("id", client.options.maxCachedMessages);
-    if (data.recipients instanceof Cache) {
-      this.recipients = data.recipients;
-    } else {
-      this.recipients = new Cache();
-      data.recipients.forEach((recipient) => {
-        this.recipients.add(this.client.internal.users.add(new User(recipient, this.client)));
-      });
+    if (data.recipients) {
+      if (data.recipients instanceof Cache) {
+        this.recipients = data.recipients;
+      } else {
+        this.recipients = new Cache();
+        data.recipients.forEach((recipient) => {
+          this.recipients.add(this.client.internal.users.add(new User(recipient, this.client)));
+        });
+      }
+    } else if (data.recipient) {
+      this.recipients.add(this.client.internal.users.add(new User(data.recipient, this.client)));
     }
     this.name = data.name !== undefined ? data.name : this.name;
     this.owner = data.owner || this.client.internal.users.get("id", data.owner_id);
