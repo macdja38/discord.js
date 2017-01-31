@@ -9,7 +9,6 @@ export default class PMChannel extends Channel {
   constructor(data, client) {
     super(data, client);
 
-    console.log(data);
     this.type = data.type;
     this.lastMessageID = data.last_message_id || data.lastMessageID;
     this.messages = new Cache("id", client.options.maxCachedMessages);
