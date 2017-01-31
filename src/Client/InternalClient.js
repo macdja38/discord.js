@@ -25,9 +25,10 @@ import Webhook from "../Structures/Webhook";
 import VoiceConnection from "../Voice/VoiceConnection";
 import TokenCacher from "../Util/TokenCacher";
 
+let zlib = require('zlib');
+
 let GATEWAY_VERSION = 6;
-let zlib;
-// let libVersion = require('../../package.json').version;
+let libVersion = require('../../package.json').version;
 
 function waitFor(condition, value = condition, interval = 20) {
   return new Promise(resolve => {
@@ -146,7 +147,7 @@ export default class InternalClient {
     this.websocket = null;
     this.userAgent = {
       url: 'https://github.com/hydrabolt/discord.js',
-      version: require('../../package.json').version
+      version: libVersion
     };
 
     if (this.client.options.compress) {
@@ -548,22 +549,18 @@ export default class InternalClient {
   // def loginWithToken
   // email and password are optional
   loginWithToken(token, email, password) {
-    console.log("login with token, called setup");
     if (!this.setupCalled) {
       this.setup();
     }
 
-    console.log("login with token, setting state to logged in");
     this.state = ConnectionState.LOGGED_IN;
     this.token = token;
     this.email = email;
     this.password = password;
 
-    console.log("Getting Gateway");
     let self = this;
     return this.getGateway()
       .then(url => {
-        console.log("Got the gateway, creating ws");
         self.token = self.client.options.bot && !self.token.startsWith("Bot ") ? `Bot ${self.token}` : self.token;
         self.createWS(url);
         return self.token;
@@ -1474,8 +1471,6 @@ export default class InternalClient {
 
     if (data.username) {
       options.username = data.username;
-    } else {
-      options.username = this.user.username;
     }
 
     if (data.avatar) {
@@ -1769,15 +1764,15 @@ export default class InternalClient {
     };
 
     this.websocket.onclose = (event) => {
-      console.log("websocket closed");
       this.websocket = null;
       this.state = ConnectionState.DISCONNECTED;
       if (event && event.code) {
-        console.error("close event", event, event.code);
         this.client.emit("warn", "WS close: " + event.code);
         let err;
         if (event.code === 1006) {
-          this.setup();
+          if (!this.setupCalled) {
+            this.setup();
+          }
           err = new Error("Error 1006, god knows");
         } else if (event.code === 4001) {
           err = new Error("Gateway received invalid OP code");
@@ -1798,6 +1793,8 @@ export default class InternalClient {
           err = new Error("Gateway connection was ratelimited");
         } else if (event.code === 4010) {
           err = new Error("Invalid shard key");
+        } else {
+          err = new Error(`Unknown disconnect code ${event.code}`)
         }
         if (err) {
           this.client.emit("error", err);
@@ -1829,6 +1826,12 @@ export default class InternalClient {
 
       this.client.emit("raw", packet);
 
+      /*
+      if (packet.op !== 0 || (packet.t !== PacketType.MESSAGE_CREATE && packet.t !== PacketType.TYPING)) {
+        console.log(packet);
+      }
+      */
+
       if (packet.s) {
         this.sequence = packet.s;
       }
@@ -1838,38 +1841,29 @@ export default class InternalClient {
           this.processPacket(packet);
           break;
         case 1:
-          console.log("set it to true 1");
           this.heartbeatAcked = true;
           this.heartbeat();
           break;
         case 7:
-          console.log("received reconnect");
           this.disconnected(true);
           break;
         case 9:
-          console.log("received invalidate session");
           this.sessionID = null;
           this.sequence = 0;
           this.identify();
           break;
         case 10:
-          console.log("got a packet with op code 10");
           if (this.sessionID) {
-            console.log("we have a session id, calling resume");
             this.resume();
           } else {
-            console.log("we don't have a session id, calling identify");
             this.identify();
           }
-          console.log("set it to true 10 1");
           this.heartbeatAcked = true; // start off without assuming we didn't get a missed heartbeat acknowledge right away;
           this.heartbeat();
-          console.log("set it to true 10 2");
           this.heartbeatAcked = true;
           this.intervals.kai = setInterval(() => this.heartbeat(), packet.d.heartbeat_interval);
           break;
         case 11:
-          console.log("set heartbeatAcked to true because heartbeat was acked.");
           this.heartbeatAcked = true;
           break;
         default:
@@ -1885,7 +1879,6 @@ export default class InternalClient {
     switch (packet.t) {
       case PacketType.RESUMED:
       case PacketType.READY: {
-        console.log('got ready or resume, type', packet.t);
         this.autoReconnectInterval = 1000;
         this.state = ConnectionState.READY;
 
@@ -2698,9 +2691,7 @@ export default class InternalClient {
   }
 
   heartbeat() {
-    console.log(`heartbeat called, value ${this.heartbeatAcked} current client state is ${this.state}`);
     if (!this.heartbeatAcked) this.disconnected(true);
-    console.log("set it to false");
     this.heartbeatAcked = false;
     this.sendWS({op: 1, d: Date.now()});
   }
