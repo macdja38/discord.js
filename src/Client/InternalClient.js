@@ -1770,9 +1770,6 @@ export default class InternalClient {
         this.client.emit("warn", "WS close: " + event.code);
         let err;
         if (event.code === 1006) {
-          //if (!this.setupCalled) {
-            this.setup();
-          //}
           err = new Error("Error 1006, connection closed abnormally");
         } else if (event.code === 4001) {
           err = new Error("Gateway received invalid OP code");
@@ -1825,12 +1822,6 @@ export default class InternalClient {
       }
 
       this.client.emit("raw", packet);
-
-      /*
-      if (packet.op !== 0 || (packet.t !== PacketType.MESSAGE_CREATE && packet.t !== PacketType.TYPING)) {
-        console.log(packet);
-      }
-      */
 
       if (packet.s) {
         this.sequence = packet.s;
