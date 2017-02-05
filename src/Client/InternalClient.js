@@ -690,24 +690,26 @@ export default class InternalClient {
           content = content.replace(/(@)(everyone|here)/g, '$1\u200b$2');
         }
 
+        let params = {
+          content: content,
+          tts: options.tts,
+          nonce: options.nonce
+        };
+
+        if (options.embed) {
+          params.embed = options.embed;
+        }
+
         if (options.file) {
           return this.resolver.resolveFile(options.file.file)
             .then(file =>
-              this.apiRequest("post", Endpoints.CHANNEL_MESSAGES(destination.id), true, {
-                content: content,
-                tts: options.tts,
-                nonce: options.nonce
-              }, {
+              this.apiRequest("post", Endpoints.CHANNEL_MESSAGES(destination.id), true, params, {
                 name: options.file.name,
                 file: file
               }).then(res => destination.messages.add(new Message(res, destination, this.client)))
             )
         } else {
-          return this.apiRequest("post", Endpoints.CHANNEL_MESSAGES(destination.id), true, {
-            content: content,
-            tts: options.tts,
-            nonce: options.nonce
-          })
+          return this.apiRequest("post", Endpoints.CHANNEL_MESSAGES(destination.id), true, params)
             .then(res => destination.messages.add(new Message(res, destination, this.client)));
         }
       });
@@ -812,14 +814,20 @@ export default class InternalClient {
 
     let content = this.resolver.resolveString(_content);
 
+    let params = {
+      content: content,
+      tts: options.tts
+    };
+
+    if (options.embed) {
+      params.embed = options.embed;
+    }
+
     return this.apiRequest(
       "patch",
       Endpoints.CHANNEL_MESSAGE(message.channel.id, message.id),
       true,
-      {
-        content: content,
-        tts: options.tts
-      }
+      params
     )
       .then(res => message.channel.messages.update(
         message,

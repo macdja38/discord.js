@@ -897,13 +897,19 @@ var InternalClient = function () {
           content = content.replace(/(@)(everyone|here)/g, "$1\u200B$2");
         }
 
+        var params = {
+          content: content,
+          tts: options.tts,
+          nonce: options.nonce
+        };
+
+        if (options.embed) {
+          params.embed = options.embed;
+        }
+
         if (options.file) {
           return _this13.resolver.resolveFile(options.file.file).then(function (file) {
-            return _this13.apiRequest("post", _Constants.Endpoints.CHANNEL_MESSAGES(destination.id), true, {
-              content: content,
-              tts: options.tts,
-              nonce: options.nonce
-            }, {
+            return _this13.apiRequest("post", _Constants.Endpoints.CHANNEL_MESSAGES(destination.id), true, params, {
               name: options.file.name,
               file: file
             }).then(function (res) {
@@ -911,11 +917,7 @@ var InternalClient = function () {
             });
           });
         } else {
-          return _this13.apiRequest("post", _Constants.Endpoints.CHANNEL_MESSAGES(destination.id), true, {
-            content: content,
-            tts: options.tts,
-            nonce: options.nonce
-          }).then(function (res) {
+          return _this13.apiRequest("post", _Constants.Endpoints.CHANNEL_MESSAGES(destination.id), true, params).then(function (res) {
             return destination.messages.add(new _Message2.default(res, destination, _this13.client));
           });
         }
@@ -1061,10 +1063,16 @@ var InternalClient = function () {
 
       var content = this.resolver.resolveString(_content);
 
-      return this.apiRequest("patch", _Constants.Endpoints.CHANNEL_MESSAGE(message.channel.id, message.id), true, {
+      var params = {
         content: content,
         tts: options.tts
-      }).then(function (res) {
+      };
+
+      if (options.embed) {
+        params.embed = options.embed;
+      }
+
+      return this.apiRequest("patch", _Constants.Endpoints.CHANNEL_MESSAGE(message.channel.id, message.id), true, params).then(function (res) {
         return message.channel.messages.update(message, new _Message2.default(res, message.channel, _this16.client));
       });
     }
