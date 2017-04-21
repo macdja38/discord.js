@@ -3,12 +3,13 @@
 Welcome to discord.js's documentation!
 ======================================
 
+# Discord.js 9.0.0 or above Notice
+If you're looking for docs for discord.js 9.0.0 and above, try visiting `the new docs site`_.
+
 discord.js is an easy-to-use and intuitive JavaScript API for Discord_. It's fairly high level, so if you're
 looking for something low level, check out `discord.io`_.
 
-if you're having problems, check out the `troubleshooting guide`_.
-
-If you're looking for docs for discord.js 9.0.0 and above, try visiting `the new docs site`_.
+if you're having problems, check out the `troubleshooting guide`_
 
 Feel free to make any contributions you want, whether it be through creating an issue, giving a suggestion or making a pull request!
 
