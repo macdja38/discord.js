@@ -3,13 +3,16 @@
 Welcome to discord.js's documentation!
 ======================================
 
-====================================
-**Discord.js 9.0.0 or above Notice**
-====================================
-If you're looking for docs for discord.js 9.0.0 and above, try visiting `the new docs site`_.
+===========================
+**Other Version Notice**
+===========================
+
+The docs hosted here are for the less popular discord.js v8.2 branch. Their is a different discord.js v11 branch and if you are on a discord server for discord.js that is probably the one you are using. 
+
+.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
 
 discord.js is an easy-to-use and intuitive JavaScript API for Discord_. It's fairly high level, so if you're
-looking for something low level, check out `discord.io`_.
+looking for something low level, check out `discord.io`_. If you are looking for something fast check out `eris`_
 
 if you're having problems, check out the `troubleshooting guide`_
 
@@ -69,4 +72,5 @@ Feel free to make any contributions you want, whether it be through creating an 
 .. _Discord : https://discordapp.com/
 .. _troubleshooting guide : troubleshooting.html
 .. _discord.io : https://github.com/izy521/discord.io
-.. _the new docs site : http://hydrabolt.github.io/discord.js
+.. _the other docs site : https://discord.js.org
+.. _eris : https://abal.moe/Eris/
