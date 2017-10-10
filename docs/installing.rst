@@ -39,7 +39,7 @@ Linux (Debian-based)
 .. code-block:: bash
 
 	$ sudo apt-get install build-essential
-	$ npm install --save discord.js
+	$ npm install --save macdja38/discord.js#v8-es6
 
 
 Additional Audio Support
