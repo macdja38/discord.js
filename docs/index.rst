@@ -7,7 +7,7 @@ Welcome to discord.js's documentation!
 **Other Version Notice**
 ===========================
 
-The docs hosted here are for the less popular discord.js v8.2 branch. Their is a different discord.js v11 branch and if you are on a discord server for discord.js that is probably the one you are using. 
+The docs hosted here are for the less popular discord.js v8.2 branch. There is a different discord.js v11 branch and if you are on a discord server for discord.js that is probably the one you are using.
 
 .. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
 
