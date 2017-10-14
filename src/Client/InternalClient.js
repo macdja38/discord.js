@@ -24,9 +24,20 @@ import Invite from "../Structures/Invite";
 import Webhook from "../Structures/Webhook";
 import VoiceConnection from "../Voice/VoiceConnection";
 import TokenCacher from "../Util/TokenCacher";
+import Unpacker from "../Util/Unpacker";
+
+let erlpack = false;
+try {
+  erlpack = require("erlpack");
+  console.log("using erlpack");
+} catch(error) {
+  console.log("erlpack failed to load, falling back to json, for performance reasons please consider installing erlpack");
+  // no erlpack
+}
+
+let zlib = require("zlib");
 
 let GATEWAY_VERSION = 6;
-let zlib;
 // let libVersion = require('../../package.json').version;
 
 function waitFor(condition, value = condition, interval = 20) {
@@ -142,14 +153,12 @@ export default class InternalClient {
     this.client = discordClient;
     this.state = ConnectionState.IDLE;
     this.websocket = null;
+    this.erlpack = discordClient.options.erlpack;
+    this.zlib = discordClient.options.zlib;
     this.userAgent = {
       url: 'https://github.com/hydrabolt/discord.js',
       version: require('../../package.json').version
     };
-
-    if (this.client.options.compress) {
-      zlib = require("zlib");
-    }
 
     // creates 4 caches with discriminators based on ID
     this.users = new Cache();
@@ -1749,8 +1758,11 @@ export default class InternalClient {
 
   sendWS(object) {
     if (this.websocket) {
-      //noinspection NodeModulesDependencies,NodeModulesDependencies
-      this.websocket.send(JSON.stringify(object));
+      if (this.erlpack) {
+        this.websocket.send(erlpack.pack(object));
+      } else {
+        this.websocket.send(JSON.stringify(object));
+      }
     }
   }
 
@@ -1761,7 +1773,10 @@ export default class InternalClient {
     if (!url.endsWith("/")) {
       url += "/";
     }
-    url += "?encoding=json&v=" + GATEWAY_VERSION;
+
+    url += `?encoding=${this.erlpack ? "etf" : "json"}${this.zlib ? "&compress=zlib-stream" : ""}&v=${GATEWAY_VERSION}`;
+
+    this._inflate = new Unpacker(this.erlpack, this.zlib, this.receiveDecompressedPacket.bind(this));
 
     this.websocket = new WebSocket(url);
 
@@ -1810,60 +1825,51 @@ export default class InternalClient {
     };
 
     this.websocket.onmessage = e => {
-      if (e.data instanceof Buffer) {
-        if (!zlib) zlib = require("zlib");
-        e.data = zlib.inflateSync(e.data).toString();
-      }
-
-      let packet;
-      try {
-        packet = JSON.parse(e.data);
-      } catch (e) {
-        this.client.emit("error", e);
-        return;
-      }
-
-      this.client.emit("raw", packet);
-
-      if (packet.s) {
-        this.sequence = packet.s;
-      }
-
-      switch (packet.op) {
-        case 0:
-          this.processPacket(packet);
-          break;
-        case 1:
-          this.heartbeatAcked = true;
-          this.heartbeat();
-          break;
-        case 7:
-          this.disconnected(true);
-          break;
-        case 9:
-          this.sessionID = null;
-          this.sequence = 0;
-          this.identify();
-          break;
-        case 10:
-          if (this.sessionID) {
-            this.resume();
-          } else {
-            this.identify();
-          }
-          this.heartbeatAcked = true; // start off without assuming we didn't get a missed heartbeat acknowledge right away;
-          this.heartbeat();
-          this.heartbeatAcked = true;
-          this.intervals.kai = setInterval(() => this.heartbeat(), packet.d.heartbeat_interval);
-          break;
-        case 11:
-          this.heartbeatAcked = true;
-          break;
-        default:
-          this.client.emit("unknown", packet);
-          break;
-      }
+      this._inflate.onMessage(e.data);
     };
+  }
+
+  receiveDecompressedPacket(packet) {
+    this.client.emit("raw", packet);
+
+    if (packet.s) {
+      this.sequence = packet.s;
+    }
+
+    switch (packet.op) {
+      case 0:
+        this.processPacket(packet);
+        break;
+      case 1:
+        this.heartbeatAcked = true;
+        this.heartbeat();
+        break;
+      case 7:
+        this.disconnected(true);
+        break;
+      case 9:
+        this.sessionID = null;
+        this.sequence = 0;
+        this.identify();
+        break;
+      case 10:
+        if (this.sessionID) {
+          this.resume();
+        } else {
+          this.identify();
+        }
+        this.heartbeatAcked = true; // start off without assuming we didn't get a missed heartbeat acknowledge right away;
+        this.heartbeat();
+        this.heartbeatAcked = true;
+        this.intervals.kai = setInterval(() => this.heartbeat(), packet.d.heartbeat_interval);
+        break;
+      case 11:
+        this.heartbeatAcked = true;
+        break;
+      default:
+        this.client.emit("unknown", packet);
+        break;
+    }
   }
 
   processPacket(packet) {
@@ -2668,8 +2674,8 @@ export default class InternalClient {
         large_threshold: this.client.options.largeThreshold,
         properties: {
           "$os": process.platform,
-          "$browser": "discord.js",
-          "$device": "discord.js",
+          "$browser": "discord.js macdja38/discord.js",
+          "$device": "discord.js macdja38/discord.js",
           "$referrer": "",
           "$referring_domain": ""
         }

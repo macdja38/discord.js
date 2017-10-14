@@ -19,6 +19,16 @@ autoReconnect
 
 Have discord.js autoreconnect when connection is lost. This is enabled by default.
 
+erlpack
+~~~~~~~~
+
+Send and recieve data in etf format, (more efficient and faster), requires installing erlpack with `npm install abalabahaha/erlpack`
+
+zlib
+~~~~~~~~
+
+Have Discord compress every packet using zlib streaming
+
 compress
 ~~~~~~~~
 

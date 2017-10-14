@@ -17,7 +17,7 @@ var major = parseInt(v[0]),
   minor = parseInt(v[1]),
   patch = parseInt(v[2]);
 
-if ((major == 0 && minor < 12) || (major == 0 && minor == 12 && patch < 7)) {
+if ((major === 0 && minor < 12) || (major === 0 && minor === 12 && patch < 7)) {
   if (!process.env.OVERRIDE_DISCORD_MIN_VERSION) {
     throw new Error(
       "discord.js doesn't support node versions less than 0.12.7.\n" +
@@ -38,7 +38,6 @@ if (major < 5) {
 function usev4() {
   module.exports = require("./libv4/index.js").default;
 }
-
 
 function use6() {
   module.exports = require("./src/index.js");

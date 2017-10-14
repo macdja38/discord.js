@@ -48,6 +48,11 @@ function dataCallback(callback) {
 	};
 }
 
+var erlpack = false;
+try {
+	erlpack = require("erlpack");
+} catch (error) {}
+
 /**
  * Used to interface with the Discord API.
  */
@@ -76,8 +81,13 @@ var Client = function (_EventEmitter) {
    */
 		var _this = _possibleConstructorReturn(this, (Client.__proto__ || Object.getPrototypeOf(Client)).call(this));
 
-		_this.options = options || {};
+		_this.options = options;
 		_this.options.compress = options.compress === undefined ? !process.browser : options.compress;
+		_this.options.zlib = options.zlib === undefined ? false : options.zlib;
+		if (options.erlpack === true && !erlpack) {
+			throw new Error("please install erlpack with `npm install abalabahaha/erlpack` or run discord.js without the erlpack option");
+		}
+		_this.options.erlpack = options.erlpack === undefined ? !!erlpack : options.erlpack;
 		_this.options.autoReconnect = options.autoReconnect === undefined ? true : options.autoReconnect;
 		_this.options.rateLimitAsError = options.rateLimitAsError || false;
 		_this.options.largeThreshold = options.largeThreshold || 250;
@@ -86,7 +96,7 @@ var Client = function (_EventEmitter) {
 		_this.options.shardId = options.shardId || 0;
 		_this.options.shardCount = options.shardCount || 0;
 		_this.options.disableEveryone = options.disableEveryone || false;
-		_this.options.bot = options.bot === undefined || options.bot === true ? true : false;
+		_this.options.bot = options.bot === undefined || options.bot === true;
 
 		if (typeof options.shardCount === "number" && typeof options.shardId === "number" && options.shardCount > 0) {
 			_this.options.shard = [options.shardId, options.shardCount];
