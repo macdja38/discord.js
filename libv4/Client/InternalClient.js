@@ -90,12 +90,26 @@ var _TokenCacher = require("../Util/TokenCacher");
 
 var _TokenCacher2 = _interopRequireDefault(_TokenCacher);
 
+var _Unpacker = require("../Util/Unpacker");
+
+var _Unpacker2 = _interopRequireDefault(_Unpacker);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var erlpack = false;
+try {
+  erlpack = require("erlpack");
+  console.log("using erlpack");
+} catch (error) {
+  console.log("erlpack failed to load, falling back to json, for performance reasons please consider installing erlpack");
+  // no erlpack
+}
+
+var zlib = require("zlib");
+
 var GATEWAY_VERSION = 6;
-var zlib = void 0;
 // let libVersion = require('../../package.json').version;
 
 function waitFor(condition) {
@@ -244,14 +258,13 @@ var InternalClient = function () {
       this.client = discordClient;
       this.state = _ConnectionState2.default.IDLE;
       this.websocket = null;
+      this.erlpack = discordClient.options.erlpack;
+      this.zlib = discordClient.options.zlib;
+      console.log("erlpack:", this.erlpack, " zlib:", this.zlib);
       this.userAgent = {
         url: 'https://github.com/hydrabolt/discord.js',
         version: require('../../package.json').version
       };
-
-      if (this.client.options.compress) {
-        zlib = require("zlib");
-      }
 
       // creates 4 caches with discriminators based on ID
       this.users = new _Cache2.default();
@@ -360,44 +373,34 @@ var InternalClient = function () {
       var _this2 = this;
 
       if (this.user.bot) {
-        var _ret = function () {
-          var leave = function leave(connection) {
-            return new Promise(function (resolve) {
-              connection.destroy();
-              resolve();
-            });
-          };
+        var leave = function leave(connection) {
+          return new Promise(function (resolve) {
+            connection.destroy();
+            resolve();
+          });
+        };
 
-          if (chann instanceof _VoiceChannel2.default) {
-            return {
-              v: _this2.resolver.resolveChannel(chann).then(function (channel) {
-                if (!channel) {
-                  return Promise.reject(new Error("voice channel does not exist"));
-                }
+        if (chann instanceof _VoiceChannel2.default) {
+          return this.resolver.resolveChannel(chann).then(function (channel) {
+            if (!channel) {
+              return Promise.reject(new Error("voice channel does not exist"));
+            }
 
-                if (channel.type !== 2) {
-                  return Promise.reject(new Error("channel is not a voice channel!"));
-                }
+            if (channel.type !== 2) {
+              return Promise.reject(new Error("channel is not a voice channel!"));
+            }
 
-                var connection = _this2.voiceConnections.get("voiceChannel", channel);
-                if (!connection) {
-                  return Promise.reject(new Error("not connected to that voice channel"));
-                }
-                return leave(connection);
-              })
-            };
-          } else if (chann instanceof _VoiceConnection2.default) {
-            return {
-              v: leave(chann)
-            };
-          } else {
-            return {
-              v: Promise.reject(new Error("invalid voice channel/connection to leave"))
-            };
-          }
-        }();
-
-        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+            var connection = _this2.voiceConnections.get("voiceChannel", channel);
+            if (!connection) {
+              return Promise.reject(new Error("not connected to that voice channel"));
+            }
+            return leave(connection);
+          });
+        } else if (chann instanceof _VoiceConnection2.default) {
+          return leave(chann);
+        } else {
+          return Promise.reject(new Error("invalid voice channel/connection to leave"));
+        }
       } else {
         // preserve old functionality for non-bots
         if (this.voiceConnections[0]) {
@@ -472,31 +475,23 @@ var InternalClient = function () {
 
             var check = function check(data) {
               if (data.t === "VOICE_SERVER_UPDATE") {
-                var _ret2 = function () {
-                  if (data.d.guild_id !== server.id) return {
-                      v: void 0
-                    }; // ensure it is the right server
-                  token = data.d.token;
-                  endpoint = data.d.endpoint;
-                  if (!token || !endpoint) return {
-                      v: void 0
-                    };
-                  var chan = new _VoiceConnection2.default(channel, _this4.client, session, token, server, endpoint);
-                  _this4.voiceConnections.add(chan);
+                if (data.d.guild_id !== server.id) return; // ensure it is the right server
+                token = data.d.token;
+                endpoint = data.d.endpoint;
+                if (!token || !endpoint) return;
+                var chan = new _VoiceConnection2.default(channel, _this4.client, session, token, server, endpoint);
+                _this4.voiceConnections.add(chan);
 
-                  chan.on("ready", function () {
-                    return resolve(chan);
-                  });
-                  chan.on("error", reject);
-                  chan.on("close", reject);
+                chan.on("ready", function () {
+                  return resolve(chan);
+                });
+                chan.on("error", reject);
+                chan.on("close", reject);
 
-                  if (timeout) {
-                    clearTimeout(timeout);
-                  }
-                  _this4.client.removeListener("raw", check);
-                }();
-
-                if ((typeof _ret2 === "undefined" ? "undefined" : _typeof(_ret2)) === "object") return _ret2.v;
+                if (timeout) {
+                  clearTimeout(timeout);
+                }
+                _this4.client.removeListener("raw", check);
               }
             };
 
@@ -2194,7 +2189,11 @@ var InternalClient = function () {
     value: function sendWS(object) {
       if (this.websocket) {
         //noinspection NodeModulesDependencies,NodeModulesDependencies
-        this.websocket.send(JSON.stringify(object));
+        if (this.erlpack) {
+          this.websocket.send(erlpack.pack(object));
+        } else {
+          this.websocket.send(JSON.stringify(object));
+        }
       }
     }
   }, {
@@ -2208,7 +2207,11 @@ var InternalClient = function () {
       if (!url.endsWith("/")) {
         url += "/";
       }
-      url += "?encoding=json&v=" + GATEWAY_VERSION;
+
+      url += "?encoding=" + (this.erlpack ? "etf" : "json") + (this.zlib ? "&compress=zlib-stream" : "") + "&v=" + GATEWAY_VERSION;
+
+      console.log(this.erlpack, this.zlib, url);
+      this._inflate = new _Unpacker2.default(this.erlpack, this.zlib, this.receiveDecompressedPacket.bind(this));
 
       this.websocket = new _ws2.default(url);
 
@@ -2256,67 +2259,61 @@ var InternalClient = function () {
       };
 
       this.websocket.onmessage = function (e) {
-        if (e.data instanceof Buffer) {
-          if (!zlib) zlib = require("zlib");
-          e.data = zlib.inflateSync(e.data).toString();
-        }
-
-        var packet = void 0;
-        try {
-          packet = JSON.parse(e.data);
-        } catch (e) {
-          _this42.client.emit("error", e);
-          return;
-        }
-
-        _this42.client.emit("raw", packet);
-
-        if (packet.s) {
-          _this42.sequence = packet.s;
-        }
-
-        switch (packet.op) {
-          case 0:
-            _this42.processPacket(packet);
-            break;
-          case 1:
-            _this42.heartbeatAcked = true;
-            _this42.heartbeat();
-            break;
-          case 7:
-            _this42.disconnected(true);
-            break;
-          case 9:
-            _this42.sessionID = null;
-            _this42.sequence = 0;
-            _this42.identify();
-            break;
-          case 10:
-            if (_this42.sessionID) {
-              _this42.resume();
-            } else {
-              _this42.identify();
-            }
-            _this42.heartbeatAcked = true; // start off without assuming we didn't get a missed heartbeat acknowledge right away;
-            _this42.heartbeat();
-            _this42.heartbeatAcked = true;
-            _this42.intervals.kai = setInterval(function () {
-              return _this42.heartbeat();
-            }, packet.d.heartbeat_interval);
-            break;
-          case 11:
-            _this42.heartbeatAcked = true;
-            break;
-          default:
-            _this42.client.emit("unknown", packet);
-            break;
-        }
+        _this42._inflate.onMessage(e.data);
       };
+    }
+  }, {
+    key: "receiveDecompressedPacket",
+    value: function receiveDecompressedPacket(packet) {
+      var _this43 = this;
+
+      this.client.emit("raw", packet);
+
+      if (packet.s) {
+        this.sequence = packet.s;
+      }
+
+      switch (packet.op) {
+        case 0:
+          this.processPacket(packet);
+          break;
+        case 1:
+          this.heartbeatAcked = true;
+          this.heartbeat();
+          break;
+        case 7:
+          this.disconnected(true);
+          break;
+        case 9:
+          this.sessionID = null;
+          this.sequence = 0;
+          this.identify();
+          break;
+        case 10:
+          if (this.sessionID) {
+            this.resume();
+          } else {
+            this.identify();
+          }
+          this.heartbeatAcked = true; // start off without assuming we didn't get a missed heartbeat acknowledge right away;
+          this.heartbeat();
+          this.heartbeatAcked = true;
+          this.intervals.kai = setInterval(function () {
+            return _this43.heartbeat();
+          }, packet.d.heartbeat_interval);
+          break;
+        case 11:
+          this.heartbeatAcked = true;
+          break;
+        default:
+          this.client.emit("unknown", packet);
+          break;
+      }
     }
   }, {
     key: "processPacket",
     value: function processPacket(packet) {
-      var _this43 = this;
+      var _this44 = this;
 
       var client = this.client;
       var data = packet.d;
@@ -2342,37 +2339,37 @@ var InternalClient = function () {
 
             data.guilds.forEach(function (server) {
               if (!server.unavailable) {
-                server = _this43.servers.add(new _Server2.default(server, client));
+                server = _this44.servers.add(new _Server2.default(server, client));
                 if (client.options.bot === false) {
-                  _this43.unsyncedGuilds++;
-                  _this43.syncGuild(server.id);
+                  _this44.unsyncedGuilds++;
+                  _this44.syncGuild(server.id);
                 }
-                if (_this43.client.options.forceFetchUsers && server.members && server.members.length < server.memberCount) {
-                  _this43.getGuildMembers(server.id, Math.ceil(server.memberCount / 1000));
+                if (_this44.client.options.forceFetchUsers && server.members && server.members.length < server.memberCount) {
+                  _this44.getGuildMembers(server.id, Math.ceil(server.memberCount / 1000));
                 }
               } else {
                 client.emit("debug", "server " + server.id + " was unavailable, could not create (ready)");
-                _this43.unavailableServers.add(server);
+                _this44.unavailableServers.add(server);
               }
             });
             data.private_channels.forEach(function (pm) {
-              _this43.private_channels.add(new _PMChannel2.default(pm, client));
+              _this44.private_channels.add(new _PMChannel2.default(pm, client));
             });
             if (!data.user.bot) {
               // bots dont have friends
               data.relationships.forEach(function (friend) {
                 if (friend.type === 1) {
                   // is a friend
-                  _this43.friends.add(new _User2.default(friend.user, client));
+                  _this44.friends.add(new _User2.default(friend.user, client));
                 } else if (friend.type === 2) {
                   // incoming friend requests
-                  _this43.blocked_users.add(new _User2.default(friend.user, client));
+                  _this44.blocked_users.add(new _User2.default(friend.user, client));
                 } else if (friend.type === 3) {
                   // incoming friend requests
-                  _this43.incoming_friend_requests.add(new _User2.default(friend.user, client));
+                  _this44.incoming_friend_requests.add(new _User2.default(friend.user, client));
                 } else if (friend.type === 4) {
                   // outgoing friend requests
-                  _this43.outgoing_friend_requests.add(new _User2.default(friend.user, client));
+                  _this44.outgoing_friend_requests.add(new _User2.default(friend.user, client));
                 } else {
                   client.emit("warn", "unknown friend type " + friend.type);
                 }
@@ -2413,19 +2410,17 @@ var InternalClient = function () {
             // format: https://discordapi.readthedocs.org/en/latest/reference/channels/messages.html#message-format
             var channel = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
             if (channel) {
-              (function () {
-                var msg = channel.messages.add(new _Message2.default(data, channel, client));
-                channel.lastMessageID = msg.id;
-                if (_this43.messageAwaits[channel.id + msg.author.id]) {
-                  _this43.messageAwaits[channel.id + msg.author.id].map(function (fn) {
-                    return fn(msg);
-                  });
-                  _this43.messageAwaits[channel.id + msg.author.id] = null;
-                  client.emit("message", msg, true); //2nd param is isAwaitedMessage
-                } else {
-                  client.emit("message", msg);
-                }
-              })();
+              var msg = channel.messages.add(new _Message2.default(data, channel, client));
+              channel.lastMessageID = msg.id;
+              if (this.messageAwaits[channel.id + msg.author.id]) {
+                this.messageAwaits[channel.id + msg.author.id].map(function (fn) {
+                  return fn(msg);
+                });
+                this.messageAwaits[channel.id + msg.author.id] = null;
+                client.emit("message", msg, true); //2nd param is isAwaitedMessage
+              } else {
+                client.emit("message", msg);
+              }
             } else {
               client.emit("warn", "message created but channel is not cached");
             }
@@ -2436,10 +2431,10 @@ var InternalClient = function () {
             var _channel2 = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
             if (_channel2) {
               // potentially blank
-              var msg = _channel2.messages.get("id", data.id);
-              client.emit("messageDeleted", msg, _channel2);
-              if (msg) {
-                _channel2.messages.remove(msg);
+              var _msg = _channel2.messages.get("id", data.id);
+              client.emit("messageDeleted", _msg, _channel2);
+              if (_msg) {
+                _channel2.messages.remove(_msg);
               } else {
                 client.emit("debug", "message was deleted but message is not cached");
               }
@@ -2450,54 +2445,50 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.MESSAGE_DELETE_BULK:
           {
-            var _ret4 = function () {
-              var channel = _this43.channels.get("id", data.channel_id) || _this43.private_channels.get("id", data.channel_id);
-              if (channel) {
-                data.ids.forEach(function (id) {
-                  // potentially blank
-                  var msg = channel.messages.get("id", id);
-                  client.emit("messageDeleted", msg, channel);
-                  if (msg) {
-                    channel.messages.remove(msg);
-                  } else {
-                    client.emit("debug", "message was deleted but message is not cached");
-                  }
-                });
-              } else {
-                client.emit("warn", "message was deleted but channel is not cached");
-              }
-              return "break";
-            }();
-
-            if (_ret4 === "break") break;
+            var _channel3 = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
+            if (_channel3) {
+              data.ids.forEach(function (id) {
+                // potentially blank
+                var msg = _channel3.messages.get("id", id);
+                client.emit("messageDeleted", msg, _channel3);
+                if (msg) {
+                  _channel3.messages.remove(msg);
+                } else {
+                  client.emit("debug", "message was deleted but message is not cached");
+                }
+              });
+            } else {
+              client.emit("warn", "message was deleted but channel is not cached");
+            }
+            break;
           }
         case _Constants.PacketType.MESSAGE_UPDATE:
           {
             // format https://discordapi.readthedocs.org/en/latest/reference/channels/messages.html#message-format
-            var _channel3 = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
-            if (_channel3) {
+            var _channel4 = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
+            if (_channel4) {
               // potentially blank
-              var _msg = _channel3.messages.get("id", data.id);
+              var _msg2 = _channel4.messages.get("id", data.id);
 
-              if (_msg) {
+              if (_msg2) {
                 // old message exists
-                data.nonce = data.nonce !== undefined ? data.nonce : _msg.nonce;
-                data.attachments = data.attachments !== undefined ? data.attachments : _msg.attachments;
-                data.tts = data.tts !== undefined ? data.tts : _msg.tts;
-                data.embeds = data.embeds !== undefined ? data.embeds : _msg.embeds;
-                data.timestamp = data.timestamp !== undefined ? data.timestamp : _msg.timestamp;
-                data.mention_everyone = data.mention_everyone !== undefined ? data.mention_everyone : _msg.everyoneMentioned;
-                data.content = data.content !== undefined ? data.content : _msg.content;
-                data.mentions = data.mentions !== undefined ? data.mentions : _msg.mentions;
-                data.author = data.author !== undefined ? data.author : _msg.author;
-                _msg = new _Message2.default(_msg, _channel3, client);
+                data.nonce = data.nonce !== undefined ? data.nonce : _msg2.nonce;
+                data.attachments = data.attachments !== undefined ? data.attachments : _msg2.attachments;
+                data.tts = data.tts !== undefined ? data.tts : _msg2.tts;
+                data.embeds = data.embeds !== undefined ? data.embeds : _msg2.embeds;
+                data.timestamp = data.timestamp !== undefined ? data.timestamp : _msg2.timestamp;
+                data.mention_everyone = data.mention_everyone !== undefined ? data.mention_everyone : _msg2.everyoneMentioned;
+                data.content = data.content !== undefined ? data.content : _msg2.content;
+                data.mentions = data.mentions !== undefined ? data.mentions : _msg2.mentions;
+                data.author = data.author !== undefined ? data.author : _msg2.author;
+                _msg2 = new _Message2.default(_msg2, _channel4, client);
               } else if (!data.author || !data.content) {
                 break;
               }
-              var nmsg = new _Message2.default(data, _channel3, client);
-              client.emit("messageUpdated", _msg, nmsg);
-              if (_msg) {
-                _channel3.messages.update(_msg, nmsg);
+              var nmsg = new _Message2.default(data, _channel4, client);
+              client.emit("messageUpdated", _msg2, nmsg);
+              if (_msg2) {
+                _channel4.messages.update(_msg2, nmsg);
               }
             } else {
               client.emit("warn", "message was updated but channel is not cached");
@@ -2544,9 +2535,9 @@ var InternalClient = function () {
 
                 try {
                   for (var _iterator7 = _server.channels[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-                    var _channel4 = _step7.value;
+                    var _channel5 = _step7.value;
 
-                    this.channels.remove(_channel4);
+                    this.channels.remove(_channel5);
                   }
                 } catch (err) {
                   _didIteratorError7 = true;
@@ -2655,9 +2646,9 @@ var InternalClient = function () {
         case _Constants.PacketType.CHANNEL_CREATE:
           {
 
-            var _channel5 = this.channels.get("id", data.id);
+            var _channel6 = this.channels.get("id", data.id);
 
-            if (!_channel5) {
+            if (!_channel6) {
 
               var _server3 = this.servers.get("id", data.guild_id);
               if (_server3) {
@@ -2681,18 +2672,18 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.CHANNEL_DELETE:
           {
-            var _channel6 = this.channels.get("id", data.id) || this.private_channels.get("id", data.id);
-            if (_channel6) {
+            var _channel7 = this.channels.get("id", data.id) || this.private_channels.get("id", data.id);
+            if (_channel7) {
 
-              if (_channel6.server) {
+              if (_channel7.server) {
                 // accounts for PMs
-                _channel6.server.channels.remove(_channel6);
-                this.channels.remove(_channel6);
+                _channel7.server.channels.remove(_channel7);
+                this.channels.remove(_channel7);
               } else {
-                this.private_channels.remove(_channel6);
+                this.private_channels.remove(_channel7);
               }
 
-              client.emit("channelDeleted", _channel6);
+              client.emit("channelDeleted", _channel7);
             } else {
               client.emit("warn", "channel deleted but already out of cache?");
             }
@@ -2700,28 +2691,28 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.CHANNEL_UPDATE:
           {
-            var _channel7 = this.channels.get("id", data.id) || this.private_channels.get("id", data.id);
-            if (_channel7) {
+            var _channel8 = this.channels.get("id", data.id) || this.private_channels.get("id", data.id);
+            if (_channel8) {
 
-              if (_channel7 instanceof _PMChannel2.default) {
+              if (_channel8 instanceof _PMChannel2.default) {
                 //PM CHANNEL
-                client.emit("channelUpdated", new _PMChannel2.default(_channel7, client), this.private_channels.update(_channel7, new _PMChannel2.default(data, client)));
+                client.emit("channelUpdated", new _PMChannel2.default(_channel8, client), this.private_channels.update(_channel8, new _PMChannel2.default(data, client)));
               } else {
-                if (_channel7.server) {
-                  if (_channel7.type === 0) {
+                if (_channel8.server) {
+                  if (_channel8.type === 0) {
                     //TEXT CHANNEL
-                    var _chan = new _TextChannel2.default(data, client, _channel7.server);
-                    _chan.messages = _channel7.messages;
-                    client.emit("channelUpdated", _channel7, _chan);
-                    _channel7.server.channels.update(_channel7, _chan);
-                    this.channels.update(_channel7, _chan);
+                    var _chan = new _TextChannel2.default(data, client, _channel8.server);
+                    _chan.messages = _channel8.messages;
+                    client.emit("channelUpdated", _channel8, _chan);
+                    _channel8.server.channels.update(_channel8, _chan);
+                    this.channels.update(_channel8, _chan);
                   } else {
                     //VOICE CHANNEL
-                    data.members = _channel7.members;
-                    var _chan2 = new _VoiceChannel2.default(data, client, _channel7.server);
-                    client.emit("channelUpdated", _channel7, _chan2);
-                    _channel7.server.channels.update(_channel7, _chan2);
-                    this.channels.update(_channel7, _chan2);
+                    data.members = _channel8.members;
+                    var _chan2 = new _VoiceChannel2.default(data, client, _channel8.server);
+                    client.emit("channelUpdated", _channel8, _chan2);
+                    _channel8.server.channels.update(_channel8, _chan2);
+                    this.channels.update(_channel8, _chan2);
                   }
                 } else {
                   client.emit("warn", "channel updated but server non-existant");
@@ -2905,43 +2896,39 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.TYPING:
           {
-            var _ret5 = function () {
 
-              var user = _this43.users.get("id", data.user_id);
-              var channel = _this43.channels.get("id", data.channel_id) || _this43.private_channels.get("id", data.channel_id);
+            var _user8 = this.users.get("id", data.user_id);
+            var _channel9 = this.channels.get("id", data.channel_id) || this.private_channels.get("id", data.channel_id);
 
-              if (user && channel) {
-                if (user.typing.since) {
-                  user.typing.since = Date.now();
-                  user.typing.channel = channel;
-                } else {
-                  user.typing.since = Date.now();
-                  user.typing.channel = channel;
-                  client.emit("userTypingStarted", user, channel);
-                }
-                setTimeout(function () {
-                  if (Date.now() - user.typing.since > 5500) {
-                    // they haven't typed since
-                    user.typing.since = null;
-                    user.typing.channel = null;
-                    client.emit("userTypingStopped", user, channel);
-                  }
-                }, 6000);
+            if (_user8 && _channel9) {
+              if (_user8.typing.since) {
+                _user8.typing.since = Date.now();
+                _user8.typing.channel = _channel9;
               } else {
-                client.emit("warn", "user typing but user or channel not existant in cache");
+                _user8.typing.since = Date.now();
+                _user8.typing.channel = _channel9;
+                client.emit("userTypingStarted", _user8, _channel9);
               }
-              return "break";
-            }();
-
-            if (_ret5 === "break") break;
+              setTimeout(function () {
+                if (Date.now() - _user8.typing.since > 5500) {
+                  // they haven't typed since
+                  _user8.typing.since = null;
+                  _user8.typing.channel = null;
+                  client.emit("userTypingStopped", _user8, _channel9);
+                }
+              }, 6000);
+            } else {
+              client.emit("warn", "user typing but user or channel not existant in cache");
+            }
+            break;
           }
         case _Constants.PacketType.SERVER_BAN_ADD:
           {
-            var _user8 = this.users.get("id", data.user.id);
+            var _user9 = this.users.get("id", data.user.id);
             var _server11 = this.servers.get("id", data.guild_id);
 
-            if (_user8 && _server11) {
-              client.emit("userBanned", _user8, _server11);
+            if (_user9 && _server11) {
+              client.emit("userBanned", _user9, _server11);
             } else {
               client.emit("warn", "user banned but user/server not in cache.");
             }
@@ -2949,11 +2936,11 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.SERVER_BAN_REMOVE:
           {
-            var _user9 = this.users.get("id", data.user.id);
+            var _user10 = this.users.get("id", data.user.id);
             var _server12 = this.servers.get("id", data.guild_id);
 
-            if (_user9 && _server12) {
-              client.emit("userUnbanned", _user9, _server12);
+            if (_user10 && _server12) {
+              client.emit("userUnbanned", _user10, _server12);
             } else {
               client.emit("warn", "user unbanned but user/server not in cache.");
             }
@@ -2964,18 +2951,18 @@ var InternalClient = function () {
             if (this.user.bot) {
               return;
             }
-            var _user10 = this.users.get("id", data.id);
-            var oldNote = _user10.note;
+            var _user11 = this.users.get("id", data.id);
+            var oldNote = _user11.note;
             var _note = data.note || null;
 
             // user in cache
-            if (_user10) {
-              var updatedUser = _user10;
+            if (_user11) {
+              var updatedUser = _user11;
               updatedUser.note = _note;
 
-              client.emit("noteUpdated", _user10, oldNote);
+              client.emit("noteUpdated", _user11, oldNote);
 
-              this.users.update(_user10, updatedUser);
+              this.users.update(_user11, updatedUser);
             } else {
               client.emit("warn", "note updated but user not in cache");
             }
@@ -2983,28 +2970,28 @@ var InternalClient = function () {
           }
         case _Constants.PacketType.VOICE_STATE_UPDATE:
           {
-            var _user11 = this.users.get("id", data.user_id);
+            var _user12 = this.users.get("id", data.user_id);
             var _server13 = this.servers.get("id", data.guild_id);
 
-            if (_user11 && _server13) {
+            if (_user12 && _server13) {
 
               if (data.channel_id) {
                 // in voice channel
-                var _channel8 = this.channels.get("id", data.channel_id);
-                if (_channel8 && _channel8.type === 2) {
-                  _server13.eventVoiceStateUpdate(_channel8, _user11, data);
+                var _channel10 = this.channels.get("id", data.channel_id);
+                if (_channel10 && _channel10.type === 2) {
+                  _server13.eventVoiceStateUpdate(_channel10, _user12, data);
                 } else {
                   client.emit("warn", "voice state channel not in cache");
                 }
               } else {
                 // not in voice channel
-                client.emit("voiceLeave", _server13.eventVoiceLeave(_user11), _user11);
+                client.emit("voiceLeave", _server13.eventVoiceLeave(_user12), _user12);
               }
             } else {
               client.emit("warn", "voice state update but user or server not in cache");
             }
 
-            if (_user11 && _user11.id === this.user.id) {
+            if (_user12 && _user12.id === this.user.id) {
               // only for detecting self user movements for connections.
               var connection = this.voiceConnections.get("server", _server13);
               // existing connection, perhaps channel moved
@@ -3032,18 +3019,18 @@ var InternalClient = function () {
 
               try {
                 for (var _iterator10 = data.members[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-                  var _user12 = _step10.value;
+                  var _user13 = _step10.value;
 
-                  _server14.memberMap[_user12.user.id] = {
-                    roles: _user12.roles,
-                    mute: _user12.mute,
+                  _server14.memberMap[_user13.user.id] = {
+                    roles: _user13.roles,
+                    mute: _user13.mute,
                     selfMute: false,
-                    deaf: _user12.deaf,
+                    deaf: _user13.deaf,
                     selfDeaf: false,
-                    joinedAt: Date.parse(_user12.joined_at),
-                    nick: _user12.nick || null
+                    joinedAt: Date.parse(_user13.joined_at),
+                    nick: _user13.nick || null
                   };
-                  _server14.members.add(this.users.add(new _User2.default(_user12.user, client)));
+                  _server14.members.add(this.users.add(new _User2.default(_user13.user, client)));
                 }
               } catch (err) {
                 _didIteratorError10 = true;
@@ -3114,24 +3101,24 @@ var InternalClient = function () {
             if (this.user.bot) {
               return;
             }
-            var _user13 = this.friends.get("id", data.id);
-            if (_user13) {
-              this.friends.remove(_user13);
-              client.emit("friendRemoved", _user13);
+            var _user14 = this.friends.get("id", data.id);
+            if (_user14) {
+              this.friends.remove(_user14);
+              client.emit("friendRemoved", _user14);
               return;
             }
 
-            _user13 = this.blocked_users.get("id", data.id);
-            if (_user13) {
+            _user14 = this.blocked_users.get("id", data.id);
+            if (_user14) {
               // they rejected friend request
-              this.blocked_users.remove(_user13);
+              this.blocked_users.remove(_user14);
               return;
             }
 
-            _user13 = this.incoming_friend_requests.get("id", data.id);
-            if (_user13) {
+            _user14 = this.incoming_friend_requests.get("id", data.id);
+            if (_user14) {
               // they rejected outgoing friend request OR client user manually deleted incoming through web client/other clients
-              var rejectedUser = this.outgoing_friend_requests.get("id", _user13.id);
+              var rejectedUser = this.outgoing_friend_requests.get("id", _user14.id);
               if (rejectedUser) {
                 // other person rejected outgoing
                 client.emit("friendRequestRejected", this.outgoing_friend_requests.remove(rejectedUser));
@@ -3139,119 +3126,115 @@ var InternalClient = function () {
               }
 
               // incoming deleted manually
-              this.incoming_friend_requests.remove(_user13);
+              this.incoming_friend_requests.remove(_user14);
               return;
             }
 
-            _user13 = this.outgoing_friend_requests.get("id", data.id);
-            if (_user13) {
+            _user14 = this.outgoing_friend_requests.get("id", data.id);
+            if (_user14) {
               // client cancelled incoming friend request OR client user manually deleted outgoing through web client/other clients
-              var incomingCancel = this.incoming_friend_requests.get("id", _user13.id);
+              var incomingCancel = this.incoming_friend_requests.get("id", _user14.id);
               if (incomingCancel) {
                 // client cancelled incoming
-                this.incoming_friend_requests.remove(_user13);
+                this.incoming_friend_requests.remove(_user14);
                 return;
               }
 
               // outgoing deleted manually
-              this.outgoing_friend_requests.remove(_user13);
+              this.outgoing_friend_requests.remove(_user14);
               return;
             }
             break;
           }
         case _Constants.PacketType.SERVER_SYNC:
           {
-            var _ret6 = function () {
-              var guild = _this43.servers.get(data.id);
-              data.members.forEach(function (dataUser) {
-                guild.memberMap[dataUser.user.id] = {
-                  roles: dataUser.roles,
-                  mute: dataUser.mute,
-                  selfMute: dataUser.self_mute,
-                  deaf: dataUser.deaf,
-                  selfDeaf: dataUser.self_deaf,
-                  joinedAt: Date.parse(dataUser.joined_at),
-                  nick: dataUser.nick || null
-                };
-                guild.members.add(client.internal.users.add(new _User2.default(dataUser.user, client)));
-              });
-              var _iteratorNormalCompletion11 = true;
-              var _didIteratorError11 = false;
-              var _iteratorError11 = undefined;
+            var guild = this.servers.get(data.id);
+            data.members.forEach(function (dataUser) {
+              guild.memberMap[dataUser.user.id] = {
+                roles: dataUser.roles,
+                mute: dataUser.mute,
+                selfMute: dataUser.self_mute,
+                deaf: dataUser.deaf,
+                selfDeaf: dataUser.self_deaf,
+                joinedAt: Date.parse(dataUser.joined_at),
+                nick: dataUser.nick || null
+              };
+              guild.members.add(client.internal.users.add(new _User2.default(dataUser.user, client)));
+            });
+            var _iteratorNormalCompletion11 = true;
+            var _didIteratorError11 = false;
+            var _iteratorError11 = undefined;
+
+            try {
+              for (var _iterator11 = data.presences[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+                var presence = _step11.value;
+
+                var _user16 = client.internal.users.get("id", presence.user.id);
+                if (_user16) {
+                  _user16.status = presence.status;
+                  _user16.game = presence.game;
+                }
+              }
+            } catch (err) {
+              _didIteratorError11 = true;
+              _iteratorError11 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion11 && _iterator11.return) {
+                  _iterator11.return();
+                }
+              } finally {
+                if (_didIteratorError11) {
+                  throw _iteratorError11;
+                }
+              }
+            }
+
+            if (guild.pendingVoiceStates && guild.pendingVoiceStates.length > 0) {
+              var _iteratorNormalCompletion12 = true;
+              var _didIteratorError12 = false;
+              var _iteratorError12 = undefined;
 
               try {
-                for (var _iterator11 = data.presences[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-                  var presence = _step11.value;
+                for (var _iterator12 = guild.pendingVoiceStates[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+                  var voiceState = _step12.value;
 
-                  var _user15 = client.internal.users.get("id", presence.user.id);
+                  var _user15 = guild.members.get("id", voiceState.user_id);
                   if (_user15) {
-                    _user15.status = presence.status;
-                    _user15.game = presence.game;
+                    guild.memberMap[_user15.id] = guild.memberMap[_user15.id] || {};
+                    guild.memberMap[_user15.id].mute = voiceState.mute || guild.memberMap[_user15.id].mute;
+                    guild.memberMap[_user15.id].selfMute = voiceState.self_mute === undefined ? guild.memberMap[_user15.id].selfMute : voiceState.self_mute;
+                    guild.memberMap[_user15.id].deaf = voiceState.deaf || guild.memberMap[_user15.id].deaf;
+                    guild.memberMap[_user15.id].selfDeaf = voiceState.self_deaf === undefined ? guild.memberMap[_user15.id].selfDeaf : voiceState.self_deaf;
+                    var _channel11 = guild.channels.get("id", voiceState.channel_id);
+                    if (_channel11) {
+                      guild.eventVoiceJoin(_user15, _channel11);
+                    } else {
+                      guild.client.emit("warn", "channel doesn't exist even though GUILD_SYNC expects them to");
+                    }
+                  } else {
+                    guild.client.emit("warn", "user doesn't exist even though GUILD_SYNC expects them to");
                   }
                 }
               } catch (err) {
-                _didIteratorError11 = true;
-                _iteratorError11 = err;
+                _didIteratorError12 = true;
+                _iteratorError12 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion11 && _iterator11.return) {
-                    _iterator11.return();
+                  if (!_iteratorNormalCompletion12 && _iterator12.return) {
+                    _iterator12.return();
                   }
                 } finally {
-                  if (_didIteratorError11) {
-                    throw _iteratorError11;
+                  if (_didIteratorError12) {
+                    throw _iteratorError12;
                   }
                 }
               }
-
-              if (guild.pendingVoiceStates && guild.pendingVoiceStates.length > 0) {
-                var _iteratorNormalCompletion12 = true;
-                var _didIteratorError12 = false;
-                var _iteratorError12 = undefined;
-
-                try {
-                  for (var _iterator12 = guild.pendingVoiceStates[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-                    var voiceState = _step12.value;
-
-                    var _user14 = guild.members.get("id", voiceState.user_id);
-                    if (_user14) {
-                      guild.memberMap[_user14.id] = guild.memberMap[_user14.id] || {};
-                      guild.memberMap[_user14.id].mute = voiceState.mute || guild.memberMap[_user14.id].mute;
-                      guild.memberMap[_user14.id].selfMute = voiceState.self_mute === undefined ? guild.memberMap[_user14.id].selfMute : voiceState.self_mute;
-                      guild.memberMap[_user14.id].deaf = voiceState.deaf || guild.memberMap[_user14.id].deaf;
-                      guild.memberMap[_user14.id].selfDeaf = voiceState.self_deaf === undefined ? guild.memberMap[_user14.id].selfDeaf : voiceState.self_deaf;
-                      var _channel9 = guild.channels.get("id", voiceState.channel_id);
-                      if (_channel9) {
-                        guild.eventVoiceJoin(_user14, _channel9);
-                      } else {
-                        guild.client.emit("warn", "channel doesn't exist even though GUILD_SYNC expects them to");
-                      }
-                    } else {
-                      guild.client.emit("warn", "user doesn't exist even though GUILD_SYNC expects them to");
-                    }
-                  }
-                } catch (err) {
-                  _didIteratorError12 = true;
-                  _iteratorError12 = err;
-                } finally {
-                  try {
-                    if (!_iteratorNormalCompletion12 && _iterator12.return) {
-                      _iterator12.return();
-                    }
-                  } finally {
-                    if (_didIteratorError12) {
-                      throw _iteratorError12;
-                    }
-                  }
-                }
-              }
-              guild.pendingVoiceStates = null;
-              _this43.unsyncedGuilds--;
-              _this43.restartServerCreateTimeout();
-              return "break";
-            }();
-
-            if (_ret6 === "break") break;
+            }
+            guild.pendingVoiceStates = null;
+            this.unsyncedGuilds--;
+            this.restartServerCreateTimeout();
+            break;
           }
         default:
           {
@@ -3286,8 +3269,8 @@ var InternalClient = function () {
           large_threshold: this.client.options.largeThreshold,
           properties: {
             "$os": process.platform,
-            "$browser": "discord.js",
-            "$device": "discord.js",
+            "$browser": "discord.js macdja38/discord.js",
+            "$device": "discord.js macdja38/discord.js",
             "$referrer": "",
             "$referring_domain": ""
           }
