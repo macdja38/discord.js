@@ -1,5 +1,7 @@
 .. include:: ./vars.rst
 
+.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+
 Troubleshooting
 ===============
 
@@ -40,12 +42,11 @@ Follow the steps below, one by one.
 If you're still having problems try
     - ``npm cache clean``
     - ``npm config set msvs_version 2015``
-    - ``npm i -S discord.js``
+    - ``npm i -S macdja38/discord.js``
 
 If nothing of the above helped, feel free to jump on the `discord.js channel in the API server`_
 
-.. _discord.js channel in the API server : https://discord.gg/0SBTUU1wZTYcFtmP
-.. _make an issue : https://github.com/hydrabolt/discord.js/issues
+.. _make an issue : https://github.com/macdja38/discord.js/issues
 .. _Follow this guide : http://adaptivesamples.com/how-to-install-ffmpeg-on-windows/
 .. _Visual Studio 2015 : https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx
 .. _C++ Support enabled : https://social.msdn.microsoft.com/Forums/getfile/740020

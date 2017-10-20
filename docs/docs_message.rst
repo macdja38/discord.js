@@ -1,5 +1,7 @@
 .. include:: ./vars.rst
 
+.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+
 Message
 =======
 
