@@ -57,13 +57,9 @@ A list of other Discord API libraries [can be found here](https://discordapi.com
 ### Links
 **[Documentation](http://discordjs.readthedocs.org/en/latest/)**
 
-**[GitHub](https://github.com/discord-js/discord.js)**
+**[GitHub](https://github.com/macdja38/discord.js)**
 
-**[Wiki](https://github.com/discord-js/discord.js/wiki)**
-
-**[Website](http://hydrabolt.github.io/discord.js/)**
-
-**[NPM](http://npmjs.com/package/discord.js)**
+**[Wiki](https://github.com/macdja38/discord.js/wiki)**
 
 ---
 
@@ -71,7 +67,8 @@ A list of other Discord API libraries [can be found here](https://discordapi.com
 
 If you have an issue or want to know if a feature exists, [read the documentation](http://discordjs.readthedocs.org/en/latest/) before contacting me about any issues! If it's badly/wrongly implemented, let me know!
 
+If you are having issues with this library and don't have a project that is already highly integrated with it you should try [the new version](https://discord.js.org/#/) their are much more resources for helping new users to the library and language.
 
-If you would like to contact me, you can create an issue on the GitHub repo, e-mail me via the one available on my NPM profile.
+If you would like to contact me, you can create an issue on the GitHub repo.
 
-Alternatively, you could just send a DM to **hydrabolt** in [**Discord API**](https://discord.gg/0SBTUU1wZTYd2XyW).
+Alternatively, you could just send a DM to **macdja38** in [**Discord API**](https://discord.gg/0SBTUU1wZTYd2XyW).
