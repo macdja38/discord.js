@@ -32,4 +32,6 @@
 .. _File Resolvable : http://discordjs.readthedocs.org/en/indev/docs_resolvables.html#file-resolvable
 .. _Role Resolvable : http://discordjs.readthedocs.org/en/indev/docs_resolvables.html#role-resolvable
 
+.. _the other docs site : https://discord.js.org
+
 .. _My Applications : https://discordapp.com/developers/applications/me
