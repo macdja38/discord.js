@@ -1,6 +1,6 @@
 {
   "name": "discordv8",
-  "version": "8.4.1",
+  "version": "8.4.2",
   "description": "A way to interface with the Discord API",
   "main": "./entrypoint.js",
   "scripts": {
