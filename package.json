@@ -1,6 +1,6 @@
 {
-  "name": "discord.js",
-  "version": "8.3.0",
+  "name": "discordv8",
+  "version": "8.4.0",
   "description": "A way to interface with the Discord API",
   "main": "./entrypoint.js",
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hydrabolt/discord.js.git"
+    "url": "git+https://github.com/macdja38/discord.js.git"
   },
   "keywords": [
     "discord",
@@ -19,12 +19,12 @@
     "node",
     "discordapp"
   ],
-  "author": "Amish Shah <amishshah.2k@gmail.com>",
+  "author": "macdja38 && premiously Amish Shah <amishshah.2k@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/hydrabolt/discord.js/issues"
+    "url": "https://github.com/macdja38/discord.js/issues"
   },
-  "homepage": "https://github.com/hydrabolt/discord.js#readme",
+  "homepage": "https://github.com/macdja38/discord.js#readme",
   "dependencies": {
     "pako": "^1.0.6",
     "superagent": "^3.3.0",

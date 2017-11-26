@@ -4,28 +4,28 @@
   </a>
 </p>
 
-[![Build Status](https://travis-ci.org/hydrabolt/discord.js.svg)](https://travis-ci.org/hydrabolt/discord.js) [![Documentation Status](https://readthedocs.org/projects/discordjs/badge/?version=latest)](http://discordjs.readthedocs.org/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/macdja38/discord.js.svg)](https://travis-ci.org/macdja38/discord.js) [![Documentation Status](https://readthedocs.org/projects/discordjs/badge/?version=latest)](http://discordjs.readthedocs.org/en/latest/?badge=latest)
 
 [![NPM](https://nodei.co/npm/discord.js.png?downloads=true&stars=true)](https://nodei.co/npm/discord.js/)
 
 
-discord.js is a node module used as a way of interfacing with [Discord](https://discordapp.com/). It is a very useful module for creating bots.
+discordv8 is a node module used as a way of interfacing with [Discord](https://discordapp.com/). It is a very useful module for creating bots.
 
 ### Installation
 
 **Requires node 0.12+**
 
-`npm install --save discord.js`
+`npm install --save discordv8`
 
 If you don't need voice support:
 
-`npm install --save --no-optional discord.js`
+`npm install --save --no-optional discordv8`
 
 ---
 
 ### Example: ping-pong
 ```js
-var Discord = require("discord.js");
+var Discord = require("discordv8");
 
 var mybot = new Discord.Client();
 

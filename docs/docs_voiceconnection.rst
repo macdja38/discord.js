@@ -1,15 +1,15 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
 
 VoiceConnection
 ===============
 
-discord.js currently supports sending audio data over Discord voice chat. A voice connection can be initiated using
+discordv8 currently supports sending audio data over Discord voice chat. A voice connection can be initiated using
 client.joinVoiceChannel_ and then later accessed again using the `client.voiceConnection` property. You can play something
 using the `playXYZ` methods and then later stop the playback and listen for events that tell you about the playback status.
 
-Note that discord.js does not support receiving data from voice yet, only sending.
+Note that discordv8 does not support receiving data from voice yet, only sending.
 
 --------
 
@@ -112,7 +112,7 @@ still be concatenated with the following options so it can be used with Discord:
 setSpeaking(value)
 ~~~~~~~~~~~~~~~~~~
 
-Sets whether or not the user is speaking (green circle around user on the official client). discord.js does this automatically when playing something,
+Sets whether or not the user is speaking (green circle around user on the official client). discordv8 does this automatically when playing something,
 but you may want to spoof it or manually disable it.
 
  - **value** - `true` or `false`: whether or not you want the bot to show as speaking

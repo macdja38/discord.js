@@ -1,6 +1,6 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
 
 Client
 ======
@@ -19,7 +19,7 @@ Client takes an options object, and supports the following options:.
 autoReconnect
 ~~~~~~~~~~~~~
 
-Have discord.js autoreconnect when connection is lost. This is enabled by default.
+Have discordv8 autoreconnect when connection is lost. This is enabled by default.
 
 erlpack
 ~~~~~~~~
@@ -141,7 +141,7 @@ userAgent
 
 An object containing `url`, `version` and `full`.
 Setting this property allows the discord developers to keep track of active bots,
-it defaults to the discord.js git repo and the current version of the package.
+it defaults to the discordv8 git repo and the current version of the package.
 `url` should be the repository/homepage of the creator.
 `version` should be the version of your bot.
 `full` is read only and will be automatically generated upon setting.

@@ -1,11 +1,11 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
 
 Usage Examples
 ==============
 
-Not all of these are standalone examples, many of them are usage examples. If you're a beginner to Discord.js, we encourage you to look through these examples to get a hang of the way things work using the library.
+Not all of these are standalone examples, many of them are usage examples. If you're a beginner to discordv8, we encourage you to look through these examples to get a hang of the way things work using the library.
 
 .. warning :: Please do not copy/paste code directly from these examples. Try to learn from and adapt these pieces of code to your specific situation.
 
@@ -25,7 +25,7 @@ Logging in with a username and password
 
 .. code-block:: javascript
 
-	const Discord = require('discord.js');
+	const Discord = require('discordv8');
 	var client = new Discord.Client();
 
 	client.login('mybot@example.com', 'password', output);
@@ -45,7 +45,7 @@ You can get your bot's token using the `My Applications`_ page on the Discord De
 
 .. code-block:: javascript
 
-	const Discord = require('discord.js');
+	const Discord = require('discordv8');
 	var client = new Discord.Client();
 
 	client.loginWithToken('token', output);
