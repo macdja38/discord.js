@@ -6,7 +6,7 @@
 
 [![Build Status](https://travis-ci.org/macdja38/discord.js.svg)](https://travis-ci.org/macdja38/discord.js) [![Documentation Status](https://readthedocs.org/projects/discordjs/badge/?version=latest)](http://discordjs.readthedocs.org/en/latest/?badge=latest)
 
-[![NPM](https://nodei.co/npm/discord.js.png?downloads=true&stars=true)](https://nodei.co/npm/discord.js/)
+[![NPM](https://nodei.co/npm/discordv8.png?downloads=true&stars=true)](https://nodei.co/npm/discordv8/)
 
 
 discordv8 is a node module used as a way of interfacing with [Discord](https://discordapp.com/). It is a very useful module for creating bots.
