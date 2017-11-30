@@ -69,6 +69,4 @@ If you have an issue or want to know if a feature exists, [read the documentatio
 
 If you are having issues with this library and don't have a project that is already highly integrated with it you should try [the new version](https://discord.js.org/#/) their are much more resources for helping new users to the library and language.
 
-If you would like to contact me, you can create an issue on the GitHub repo.
-
-Alternatively, you could just send a DM to **macdja38** in [**Discord API**](https://discord.gg/0SBTUU1wZTYd2XyW).
+If you would like to contact me, you could just send a DM to **macdja38** in [**Discord API**](https://discord.gg/0SBTUU1wZTYd2XyW).
