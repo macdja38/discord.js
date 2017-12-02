@@ -3,5 +3,6 @@ docs/
 examples/
 web-dist/
 src/
+node_modules/
 .travis.yml
 TODO.md

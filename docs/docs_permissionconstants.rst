@@ -1,6 +1,6 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
 
 Permission Constants
 ====================
@@ -48,7 +48,7 @@ Valid Permission Names
 Preferred Way
 -------------
 
-The preferred way of using permissions in discord.js is to just use the name. E.g:
+The preferred way of using permissions in discordv8 is to just use the name. E.g:
 
 ``role.hasPermission("voiceUseVAD")``
 

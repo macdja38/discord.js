@@ -1,13 +1,13 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
 
 Cache
 =====
 
 **extends Array**
 
-A Cache object extends an Array (so it can be used like a regular array) but introduces helper functions to make it more useful when developing with discord.js. Unlike a regular array, it doesn't care about the instance or prototype of an object, it works purely on properties.
+A Cache object extends an Array (so it can be used like a regular array) but introduces helper functions to make it more useful when developing with discordv8. Unlike a regular array, it doesn't care about the instance or prototype of an object, it works purely on properties.
 
 **Examples:**
 

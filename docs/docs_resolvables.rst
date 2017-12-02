@@ -1,11 +1,11 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the Discord.js 8.2 branch maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_.
 
 Resolvables
 ===========
 
-In discord.js, the aim is to allow the end developer to have freedom in what sort of data types they supply. References to any sort of resolvable basically mean what types of data you can provide. The different resolvables are shown before:
+In discordv8, the aim is to allow the end developer to have freedom in what sort of data types they supply. References to any sort of resolvable basically mean what types of data you can provide. The different resolvables are shown before:
 
 --------
 
