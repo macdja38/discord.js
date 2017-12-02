@@ -1,6 +1,6 @@
 .. include:: ./vars.rst
 
-.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the other docs site`_.
+.. danger:: This documentation is for the discord.js 8.2 branch called discordv8 maintained by macdja38. You're **probably** looking for documentation on version 9 or higher, which is available on `the up-to-date, official docs site`_
 
 Usage Examples
 ==============
@@ -108,7 +108,7 @@ In the same channel
 This is by far the most common way people will send a message in the Discord API. Here we will send a message to the same Channel_ we received a message from in the above example.
 
 .. code-block:: javascript
-	
+
 	client.on('message', function(message) {
 		// Don't forget to log the message!
 		client.sendMessage(message.channel, "Hello!");
@@ -121,7 +121,7 @@ You can also use a `Message`_ resolvable as an parameter. This example does the 
 	client.on('message', function(message) {
 		client.sendMessage(message, "Hello!");
 	});
-	
+
 You can also directly reply to messages. This does the same as adding an @mention in front of your text.
 
 Sends "@author Hello!"
@@ -165,7 +165,7 @@ Sending files
 
 The process of sending files is similar to how you send messages.
 
-The first parameter takes an `Channel Resolvable`_ or `User Resolvable`_. The User Resolvable will send the file as a DM, and the Channel Resolvable will send the file to a text channel. 
+The first parameter takes an `Channel Resolvable`_ or `User Resolvable`_. The User Resolvable will send the file as a DM, and the Channel Resolvable will send the file to a text channel.
 
 The next parameter is a `File Resolvable`_.
 
@@ -186,7 +186,7 @@ URL
 		});
 	});
 
-Local file 
+Local file
 ~~~~~~~~~~~~~~~~
 
 .. code-block:: javascript
@@ -225,7 +225,7 @@ Deleting messages
 
 The deleteMessage function takes an `Message Resolvable`_ as the first parameter. The second parameter is a callback.
 
-This snippet will delete the received message. 
+This snippet will delete the received message.
 
 .. code-block:: javascript
 
@@ -288,7 +288,7 @@ You can also use the setPlayingGame function, if you just want to set your game.
 .. code-block:: javascript
 
 	client.on('ready', () => {
-		client.setStatusIdle(); // Now idle	
+		client.setStatusIdle(); // Now idle
 		setTimeout(() => { client.setStatusOnline(); }, 10000); // Set the status back to online after 10 seconds.
 	});
 
@@ -297,7 +297,7 @@ Set streaming
 
 You can even set the streaming status.
 
-The setStreaming function takes 3 parameters, and one callback. 
+The setStreaming function takes 3 parameters, and one callback.
 
 The first defines the name of the game, the second the URL to a twitch.tv channel and the third a type where 1 = streamnig.
 
