@@ -26,14 +26,14 @@ bot.on("disconnected", () => {
 });
 
 //when the bot receives a message
-bot.on("message", msg => {
+bot.on("message", async msg => {
 	//if message begins with "ping"
 	if (msg.content.startsWith("ping")) {
 		//send a message to the channel the ping message was sent in.
 		bot.sendMessage(msg, "pong!");
 
 		//alert the console
-		console.log("pong-ed " + msg.author.username);
+		return console.log("pong-ed " + msg.author.username);
 	}
 });
 
